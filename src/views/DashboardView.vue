@@ -1,4 +1,5 @@
 <template>
+<div class="dashboard-root">
   <dv-full-screen-container class="bg-container">
     <div class="top-header">
       <dv-decoration-8 style="width:300px;height:50px;" />
@@ -19,30 +20,128 @@
 			<StateAnalysis :data="stateData"/>			
 		</div>
 	</dv-border-box-12>
-
+	<dv-border-box-12 class="grid-box">
+		<div class="chart-box">
+			<h3>短时间答题分布 </h3>
+			<ShortTimeChart :data="shortTimeData" />
+		</div>
+	</dv-border-box-12>
+	<dv-border-box-12 class="grid-box">
+		<div class="chart-box">
+			<h3>班级答题数量分布 </h3>
+			<ClassRankChart :data="classData" />
+		</div>
+	</dv-border-box-12>
+	<dv-border-box-12 class="grid-box">
+		<div class="chart-box">
+			<h3>学习方法分布 </h3>
+			<MethodConicalChart :data="methodData" />
+		</div>
+	</dv-border-box-12>
+	<dv-border-box-12 class="grid-box">
+		<div class="chart-box">
+			<h3>班级对比数据 </h3>
+			<ClassDetailChart :data="comparisonData" />
+		</div>
+	</dv-border-box-12>
+	<dv-border-box-12 class="grid-box">
+		<div class="chart-box">
+			<h3>学生表现数据 </h3>
+			<StudentAnalysis :performanceData="performanceData" />
+		</div>
+	</dv-border-box-12>
+	<dv-border-box-12 class="grid-box">
+		<div class="chart-box">
+			<h3>学生分组统计 </h3>
+			<ClassGroupChart :data="groupData" />
+		</div>
+	</dv-border-box-12>
+	<dv-border-box-12 class="grid-box">
+		<div class="chart-box">
+			<h3>小时活跃度 </h3>
+			<HourlyActivityChart :data="activityData" />
+		</div>
+	</dv-border-box-12>
+	<dv-border-box-12 class="grid-box">
+		<div class="chart-box">
+			<h3>小时正确率 </h3>
+			<HourlyAccuracyChart :data="accuracyData" />
+		</div>
+	</dv-border-box-12>
+	<dv-border-box-12 class="grid-box">
+		<div class="chart-box">
+			<h3>星期活跃度 </h3>
+			<WeekdayRadarChart :data="weekActivityData" />
+		</div>
+	</dv-border-box-12>
+	<dv-border-box-12 class="grid-box">
+		<div class="chart-box">
+			<h3>题目难度分析 </h3>
+			<QuestionAnalysis :difficultyData="difficultyData" />
+		</div>
+	</dv-border-box-12>
+	<dv-border-box-12 class="grid-box">
+		<div class="chart-box">
+			<h3>难度分组统计 </h3>
+			<DifficultyGroupChart :data="difficultyGroupData" />
+		</div>
+	</dv-border-box-12>
 
     </div>
   </dv-full-screen-container>
+</div>
 </template>
 
 <script>
-import { fetchBasicStatistics, fetchStateDistribution  } from '../js/dataService.js';
+import { fetchBasicStatistics, fetchStateDistribution, fetchShortTimeDist, fetchClassDistribution, fetchMethodDistribution, fetchClassComparison, fetchStudentPerformance, fetchStudentGroupStats, fetchHourlyActivity, fetchHourlyAccuracy, fetchWeekdayActivity, fetchQuestionDifficulty, fetchDifficultyGroupStats  } from '../js/dataService.js';
 import BasicKpi from '../components/BasicKpi.vue';
 import StateAnalysis from '../components/StateAnalysis.vue';
+import ShortTimeChart from '../components/ShortTimeChart.vue';
+import ClassRankChart from '../components/ClassRankChart.vue';
+import MethodConicalChart from '../components/MethodConicalChart.vue';
+import ClassDetailChart from '../components/ClassDetailChart.vue';
+import StudentAnalysis from '../components/StudentAnalysis.vue';
+import ClassGroupChart from '../components/ClassGroupChart.vue';
+import HourlyActivityChart from '../components/HourlyActivityChart.vue';
+import HourlyAccuracyChart from '../components/HourlyAccuracyChart.vue';
+import WeekdayRadarChart from '../components/WeekdayRadarChart.vue';
+import QuestionAnalysis from '../components/QuestionAnalysis.vue';
+import DifficultyGroupChart from '../components/DifficultyGroupChart.vue';
 
 export default {
-	name: 'DashboardView', 
-	components: { BasicKpi, StateAnalysis },
+	name: 'DashboardView', components: { BasicKpi, StateAnalysis, ShortTimeChart, ClassRankChart, MethodConicalChart, ClassDetailChart, StudentAnalysis, ClassGroupChart, HourlyActivityChart, HourlyAccuracyChart, WeekdayRadarChart, QuestionAnalysis, DifficultyGroupChart },
 	data() {
 		return {
 			basicStats: {} ,
-			stateData: []
+			stateData: [], 
+			shortTimeData: [],
+			classData: [], 
+			methodData: [],
+			comparisonData: [], 
+			performanceData: { topStudents: [], scatterData: [] }, 
+			groupData: [],
+			activityData: [], 
+			accuracyData: [], 
+			weekActivityData: [],
+			difficultyData: { hardestQuestions: [], bubbleData: [] },
+			difficultyGroupData: []
 		};
 	},
 	async mounted() {
 		try {
 			this.stateData = await fetchStateDistribution();
 			this.basicStats = await fetchBasicStatistics();
+			this.shortTimeData = await fetchShortTimeDist();
+			this.classData = await fetchClassDistribution();
+			this.methodData = await fetchMethodDistribution();
+			this.comparisonData = await fetchClassComparison();
+			this.performanceData = await fetchStudentPerformance();
+			this.groupData = await fetchStudentGroupStats();
+			this.activityData = await fetchHourlyActivity();
+			this.accuracyData = await fetchHourlyAccuracy();
+			this.weekActivityData = await fetchWeekdayActivity();
+			this.difficultyData = await fetchQuestionDifficulty();
+			this.difficultyGroupData = await fetchDifficultyGroupStats();
 		} catch (error) { 
 			console.error("加载数据失败: ", error);
 		}
@@ -88,11 +187,10 @@ export default {
 
 .main-content {
   padding: 20px;
-  height: calc(100% - 80px);
+  height: 100%;
   display: grid;
   // 布局：4列 x 2行
   grid-template-columns: repeat(4, 1fr);
-  grid-template-rows: repeat(2, 1fr);
   grid-gap: 20px;
 }
 
@@ -120,5 +218,12 @@ export default {
   .chart-container {
     flex: 1; // 填满剩余空间
   }
+}
+
+.dashboard-root {
+  background-color: #000;
+  /* 允许纵向滚动 */
+  overflow-y: auto; 
+  height: 100vh;
 }
 </style>

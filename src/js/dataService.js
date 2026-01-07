@@ -43,3 +43,259 @@ export const fetchStateDistribution = () => {
     });
   });
 };
+
+// 短时间答题分布
+export const fetchShortTimeDist = () => {
+  return new Promise((resolve, reject) => {
+    Papa.parse('/datav_data/short_time_distribution.csv', {
+      download: true,
+      header: true,
+      dynamicTyping: true,
+      complete: (results) => {
+        // 过滤掉空数据并按秒数排序
+        const data = results.data.filter(item => item.second).sort((a, b) => a.second - b.second);
+        resolve(data);
+      },
+      error: (err) => reject(err)
+    });
+  });
+};
+
+// 班级答题数量分布
+export const fetchClassDistribution = () => {
+  return new Promise((resolve, reject) => {
+    Papa.parse('/datav_data/class_distribution.csv', {
+      download: true,
+      header: true,
+      dynamicTyping: true,
+      complete: (results) => {
+        // 转换格式以匹配 DataV 排名轮播表：[{ name: '', value: 123 }, ...]
+        const formattedData = results.data
+          .filter(item => item.class)
+          .map(item => ({
+            name: item.class,
+            value: item.count
+          }));
+        resolve(formattedData);
+      },
+      error: (err) => reject(err)
+    });
+  });
+};
+
+// 学习方法分布
+export const fetchMethodDistribution = () => {
+  return new Promise((resolve, reject) => {
+    Papa.parse('/datav_data/method_distribution.csv', {
+      download: true,
+      header: true,
+      dynamicTyping: true,
+      complete: (results) => {
+        // 转换格式以匹配 DataV 锥形柱图：[{ name: '', value: 123 }, ...]
+        const data = results.data
+          .filter(item => item.method)
+          .map(item => ({
+            name: item.method.replace('Method_', ''), // 简化名称显示
+            value: item.count
+          }));
+        resolve(data);
+      },
+      error: (err) => reject(err)
+    });
+  });
+};
+
+// 班级对比数据
+export const fetchClassComparison = () => {
+  return new Promise((resolve, reject) => {
+    Papa.parse('/datav_data/class_comparison.csv', {
+      download: true,
+      header: true,
+      dynamicTyping: true,
+      complete: (results) => {
+        // 过滤并按班级名称排序（Class1, Class2...）
+        const data = results.data
+          .filter(item => item.class)
+          .sort((a, b) => {
+            const numA = parseInt(a.class.replace('Class', ''));
+            const numB = parseInt(b.class.replace('Class', ''));
+            return numA - numB;
+          });
+        resolve(data);
+      },
+      error: (err) => reject(err)
+    });
+  });
+};
+
+// 学生表现数据
+export const fetchStudentPerformance = () => {
+  return new Promise((resolve, reject) => {
+    Papa.parse('/datav_data/student_performance.csv', {
+      download: true,
+      header: true,
+      dynamicTyping: true,
+      skipEmptyLines: true, // 关键：跳过空行
+      complete: (results) => {
+        // 过滤掉没有 student_ID 的无效行
+        const cleanData = results.data.filter(item => item.student_ID);
+        
+        if (cleanData.length === 0) {
+          console.warn("学生表现数据解析为空，请检查CSV内容");
+          resolve({ topStudents: [], scatterData: [] });
+          return;
+        }
+
+        // 1. 获取综合排名前 20
+        const topStudents = [...cleanData]
+          .sort((a, b) => (a.综合排名 || 999) - (b.综合排名 || 999))
+          .slice(0, 20);
+        
+        // 2. 格式化散点图数据 [学习强度, 正确率, 答题次数, 学生ID]
+        const scatterData = cleanData.map(item => [
+          item.学习强度 || 0,
+          ((item.正确率 || 0) * 100).toFixed(1),
+          item.答题次数 || 0,
+          item.student_ID
+        ]);
+
+        resolve({ topStudents, scatterData });
+      },
+      error: (err) => reject(err)
+    });
+  });
+};
+
+// 学生分组统计
+export const fetchStudentGroupStats = () => {
+  return new Promise((resolve, reject) => {
+    Papa.parse('/datav_data/student_group_stats.csv', {
+      download: true,
+      header: true,
+      dynamicTyping: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        const data = results.data.filter(item => item.班级);
+        // 按班级编号自然排序
+        data.sort((a, b) => {
+          const numA = parseInt(a.班级.replace('Class', ''));
+          const numB = parseInt(b.班级.replace('Class', ''));
+          return numA - numB;
+        });
+        resolve(data);
+      },
+      error: (err) => reject(err)
+    });
+  });
+};
+
+// 小时活跃度
+export const fetchHourlyActivity = () => {
+  return new Promise((resolve, reject) => {
+    Papa.parse('/datav_data/hourly_activity.csv', {
+      download: true,
+      header: true,
+      dynamicTyping: true,
+      complete: (results) => {
+        // 确保按 0-23 小时顺序排列
+        const data = results.data
+          .filter(item => item.hour !== undefined)
+          .sort((a, b) => a.hour - b.hour);
+        resolve(data);
+      },
+      error: (err) => reject(err)
+    });
+  });
+};
+
+// 小时正确率
+export const fetchHourlyAccuracy = () => {
+  return new Promise((resolve, reject) => {
+    Papa.parse('/datav_data/hourly_accuracy.csv', {
+      download: true,
+      header: true,
+      dynamicTyping: true,
+      complete: (results) => {
+        const data = results.data
+          .filter(item => item.hour !== undefined)
+          .sort((a, b) => a.hour - b.hour)
+          .map(item => ({
+            hour: item.hour,
+            // 转换为百分比并保留一位小数
+            accuracy: parseFloat((item.accuracy * 100).toFixed(1))
+          }));
+        resolve(data);
+      },
+      error: (err) => reject(err)
+    });
+  });
+};
+
+// 星期活跃度
+export const fetchWeekdayActivity = () => {
+  return new Promise((resolve, reject) => {
+    Papa.parse('/datav_data/weekday_activity.csv', {
+      download: true,
+      header: true,
+      dynamicTyping: true,
+      complete: (results) => {
+        // 确保数据按周一到周日排序 (0-6)
+        const data = results.data
+          .filter(item => item.weekday_name)
+          .sort((a, b) => a.weekday - b.weekday);
+        resolve(data);
+      },
+      error: (err) => reject(err)
+    });
+  });
+};
+
+// 题目难度分析
+export const fetchQuestionDifficulty = () => {
+  return new Promise((resolve, reject) => {
+    Papa.parse('/datav_data/question_difficulty.csv', {
+      download: true,
+      header: true,
+      dynamicTyping: true,
+      complete: (results) => {
+        const data = results.data.filter(item => item.title_ID);
+        
+        // 1. 获取正确率最低的 10 道题 (难度排行榜)
+        const hardestQuestions = [...data]
+          .sort((a, b) => a.正确率 - b.正确率)
+          .slice(0, 10);
+        
+        // 2. 格式化气泡图数据 [平均用时, 正确率, 答题次数, 题目ID]
+        const bubbleData = data.map(item => [
+          item.平均用时,
+          parseFloat((item.正确率 * 100).toFixed(1)),
+          item.答题次数,
+          item.title_ID.replace('Question_', '') // 简化 ID 显示
+        ]);
+
+        resolve({ hardestQuestions, bubbleData });
+      },
+      error: (err) => reject(err)
+    });
+  });
+};
+
+// 题目分组统计
+export const fetchDifficultyGroupStats = () => {
+  return new Promise((resolve, reject) => {
+    Papa.parse('/datav_data/difficulty_group_stats.csv', {
+      download: true,
+      header: true,
+      dynamicTyping: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        // 过滤掉正确率为空的行（排除掉中等和简单这两个空分类）
+        const cleanData = results.data.filter(item => item.平均正确率 !== null && item.平均正确率 !== "");
+        resolve(cleanData);
+      },
+      error: (err) => reject(err)
+    });
+  });
+};
+
+
