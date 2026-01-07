@@ -298,4 +298,105 @@ export const fetchDifficultyGroupStats = () => {
   });
 };
 
+// 学习进步轨迹
+export const fetchLearningProgress = () => {
+  return new Promise((resolve, reject) => {
+    Papa.parse('/datav_data/learning_progress.csv', {
+      download: true,
+      header: true,
+      dynamicTyping: true,
+      complete: (results) => {
+        const rawData = results.data.filter(item => item.student_ID);
+        
+        // 1. 统计进步类型占比
+        const stats = { 进步: 0, 退步: 0, 稳定: 0, 未分类: 0 };
+        // 2. 准备象限图数据 [正确率变化, 用时变化, 学生ID]
+        const quadrantData = [];
 
+        rawData.forEach(item => {
+          // 统计分类
+          const type = item.进步类型 || '未分类';
+          if (stats[type] !== undefined) stats[type]++;
+          else stats.未分类++;
+
+          // 清洗数值 (排除 inf 和 null)
+          const accChange = isFinite(item.平均正确率变化) ? item.平均正确率变化 : 0;
+          const timeChange = isFinite(item.平均用时变化) ? item.平均用时变化 : 0;
+          
+          if (accChange !== 0 || timeChange !== 0) {
+            quadrantData.push([accChange, timeChange, item.student_ID, type]);
+          }
+        });
+
+        resolve({ 
+          pieData: Object.keys(stats).map(k => ({ name: k, value: stats[k] })),
+          quadrantData 
+        });
+      },
+      error: (err) => reject(err)
+    });
+  });
+};
+
+// 周度学习进度
+export const fetchWeeklyProgress = () => {
+  return new Promise((resolve, reject) => {
+    Papa.parse('/datav_data/weekly_progress.csv', {
+      download: true,
+      header: true,
+      dynamicTyping: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        const rawData = results.data.filter(item => item.week);
+        
+        // 按周聚合数据
+        const weeklyMap = {};
+        rawData.forEach(item => {
+          if (!weeklyMap[item.week]) {
+            weeklyMap[item.week] = { acc: 0, time: 0, count: 0, students: 0 };
+          }
+          weeklyMap[item.week].acc += item.正确率 || 0;
+          weeklyMap[item.week].time += item.平均用时 || 0;
+          weeklyMap[item.week].students += 1;
+        });
+
+        // 转换为 ECharts 格式并按周排序
+        const weeks = Object.keys(weeklyMap).sort((a, b) => a - b);
+        const processedData = weeks.map(w => ({
+          week: `第${w}周`,
+          accuracy: parseFloat((weeklyMap[w].acc / weeklyMap[w].students * 100).toFixed(1)),
+          avgTime: parseFloat((weeklyMap[w].time / weeklyMap[w].students).toFixed(2))
+        }));
+
+        resolve(processedData);
+      },
+      error: (err) => reject(err)
+    });
+  });
+};
+
+// 学习方法效率分析
+export const fetchLearningMethods = () => {
+  return new Promise((resolve, reject) => {
+    Papa.parse('/datav_data/learning_methods.csv', {
+      download: true,
+      header: true,
+      dynamicTyping: true,
+      complete: (results) => {
+        const data = results.data.filter(item => item.method);
+        
+        // 格式化数据
+        const processed = data.map(item => ({
+          name: item.method.split('_')[1], // 提取简写如 BXr9...
+          full_name: item.method,
+          accuracy: parseFloat((item.正确率 * 100).toFixed(1)),
+          usage: item.使用次数,
+          efficiency: item.效率指数
+        }));
+        
+        resolve(processed);
+      },
+      error: (err) => reject(err)
+    });
+  });
+};

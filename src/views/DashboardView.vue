@@ -86,14 +86,32 @@
 			<DifficultyGroupChart :data="difficultyGroupData" />
 		</div>
 	</dv-border-box-12>
+	<dv-border-box-12 class="grid-box">
+		<div class="chart-box">
+			<h3>学习进步轨迹 </h3>
+			<LearningProgressChart :progressData="progressData" />
+		</div>
+	</dv-border-box-12>
+	<dv-border-box-12 class="grid-box">
+		<div class="chart-box">
+			<h3>周度学习进度 </h3>
+			<WeeklyProgressChart :data="weeklyData" />
+		</div>
+	</dv-border-box-12>
+	<dv-border-box-12 class="grid-box">
+		<div class="chart-box">
+			<h3>学习方法效率分析 </h3>
+			<MethodEfficiencyChart :data="efficiencyData" />
+		</div>
+	</dv-border-box-12>
 
-    </div>
+   </div>
   </dv-full-screen-container>
 </div>
 </template>
 
 <script>
-import { fetchBasicStatistics, fetchStateDistribution, fetchShortTimeDist, fetchClassDistribution, fetchMethodDistribution, fetchClassComparison, fetchStudentPerformance, fetchStudentGroupStats, fetchHourlyActivity, fetchHourlyAccuracy, fetchWeekdayActivity, fetchQuestionDifficulty, fetchDifficultyGroupStats  } from '../js/dataService.js';
+import { fetchBasicStatistics, fetchStateDistribution, fetchShortTimeDist, fetchClassDistribution, fetchMethodDistribution, fetchClassComparison, fetchStudentPerformance, fetchStudentGroupStats, fetchHourlyActivity, fetchHourlyAccuracy, fetchWeekdayActivity, fetchQuestionDifficulty, fetchDifficultyGroupStats, fetchLearningProgress, fetchWeeklyProgress, fetchLearningMethods  } from '../js/dataService.js';
 import BasicKpi from '../components/BasicKpi.vue';
 import StateAnalysis from '../components/StateAnalysis.vue';
 import ShortTimeChart from '../components/ShortTimeChart.vue';
@@ -107,9 +125,13 @@ import HourlyAccuracyChart from '../components/HourlyAccuracyChart.vue';
 import WeekdayRadarChart from '../components/WeekdayRadarChart.vue';
 import QuestionAnalysis from '../components/QuestionAnalysis.vue';
 import DifficultyGroupChart from '../components/DifficultyGroupChart.vue';
+import LearningProgressChart from '../components/LearningProgressChart.vue';
+import WeeklyProgressChart from '../components/WeeklyProgressChart.vue';
+import MethodEfficiencyChart from '../components/MethodEfficiencyChart.vue';
 
 export default {
-	name: 'DashboardView', components: { BasicKpi, StateAnalysis, ShortTimeChart, ClassRankChart, MethodConicalChart, ClassDetailChart, StudentAnalysis, ClassGroupChart, HourlyActivityChart, HourlyAccuracyChart, WeekdayRadarChart, QuestionAnalysis, DifficultyGroupChart },
+	name: 'DashboardView', 
+	components: { BasicKpi, StateAnalysis, ShortTimeChart, ClassRankChart, MethodConicalChart, ClassDetailChart, StudentAnalysis, ClassGroupChart, HourlyActivityChart, HourlyAccuracyChart, WeekdayRadarChart, QuestionAnalysis, DifficultyGroupChart, LearningProgressChart, WeeklyProgressChart, MethodEfficiencyChart },
 	data() {
 		return {
 			basicStats: {} ,
@@ -124,7 +146,10 @@ export default {
 			accuracyData: [], 
 			weekActivityData: [],
 			difficultyData: { hardestQuestions: [], bubbleData: [] },
-			difficultyGroupData: []
+			difficultyGroupData: [], 
+			progressData: [], 
+			weeklyData: [], 
+			efficiencyData: []
 		};
 	},
 	async mounted() {
@@ -142,6 +167,9 @@ export default {
 			this.weekActivityData = await fetchWeekdayActivity();
 			this.difficultyData = await fetchQuestionDifficulty();
 			this.difficultyGroupData = await fetchDifficultyGroupStats();
+			this.progressData = await fetchLearningProgress();
+			this.weeklyData = await fetchWeeklyProgress();
+			this.efficiencyData = await fetchLearningMethods();
 		} catch (error) { 
 			console.error("加载数据失败: ", error);
 		}
