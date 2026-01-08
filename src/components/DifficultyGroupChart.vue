@@ -1,7 +1,7 @@
 <template>
   <div class="difficulty-group">
     <div class="header-decoration">
-      <dv-decoration-1 style="width:200px;height:50px;" />
+      <dv-decoration-1 style="width:100px;height:50px;" />
       <span class="title">难度等级综合评估</span>
     </div>
     <div ref="groupRef" style="width: 100%; height: 300px;"></div>

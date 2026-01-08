@@ -128,18 +128,17 @@ export const fetchClassComparison = () => {
   });
 };
 
-// 学生表现数据
+// 学生表现数据 - 优化版本
 export const fetchStudentPerformance = () => {
   return new Promise((resolve, reject) => {
     Papa.parse('/datav_data/student_performance.csv', {
       download: true,
       header: true,
       dynamicTyping: true,
-      skipEmptyLines: true, // 关键：跳过空行
+      skipEmptyLines: true,
       complete: (results) => {
-        // 过滤掉没有 student_ID 的无效行
         const cleanData = results.data.filter(item => item.student_ID);
-        
+
         if (cleanData.length === 0) {
           console.warn("学生表现数据解析为空，请检查CSV内容");
           resolve({ topStudents: [], scatterData: [] });
@@ -150,16 +149,25 @@ export const fetchStudentPerformance = () => {
         const topStudents = [...cleanData]
           .sort((a, b) => (a.综合排名 || 999) - (b.综合排名 || 999))
           .slice(0, 20);
-        
+
         // 2. 格式化散点图数据 [学习强度, 正确率, 答题次数, 学生ID]
         const scatterData = cleanData.map(item => [
           item.学习强度 || 0,
-          ((item.正确率 || 0) * 100).toFixed(1),
+          ((item.正确率 || 0) * 100),
           item.答题次数 || 0,
           item.student_ID
         ]);
 
-        resolve({ topStudents, scatterData });
+        // 3. 移除异常值（学习强度过大或过小）
+        const filteredScatterData = scatterData.filter(d =>
+          d[0] > 0 && d[0] < 100 && // 学习强度在合理范围内
+          d[1] >= 0 && d[1] <= 100  // 正确率在0-100%之间
+        );
+
+        resolve({
+          topStudents,
+          scatterData: filteredScatterData
+        });
       },
       error: (err) => reject(err)
     });
@@ -259,12 +267,12 @@ export const fetchQuestionDifficulty = () => {
       dynamicTyping: true,
       complete: (results) => {
         const data = results.data.filter(item => item.title_ID);
-        
+
         // 1. 获取正确率最低的 10 道题 (难度排行榜)
         const hardestQuestions = [...data]
           .sort((a, b) => a.正确率 - b.正确率)
           .slice(0, 10);
-        
+
         // 2. 格式化气泡图数据 [平均用时, 正确率, 答题次数, 题目ID]
         const bubbleData = data.map(item => [
           item.平均用时,
@@ -307,7 +315,7 @@ export const fetchLearningProgress = () => {
       dynamicTyping: true,
       complete: (results) => {
         const rawData = results.data.filter(item => item.student_ID);
-        
+
         // 1. 统计进步类型占比
         const stats = { 进步: 0, 退步: 0, 稳定: 0, 未分类: 0 };
         // 2. 准备象限图数据 [正确率变化, 用时变化, 学生ID]
@@ -322,15 +330,15 @@ export const fetchLearningProgress = () => {
           // 清洗数值 (排除 inf 和 null)
           const accChange = isFinite(item.平均正确率变化) ? item.平均正确率变化 : 0;
           const timeChange = isFinite(item.平均用时变化) ? item.平均用时变化 : 0;
-          
+
           if (accChange !== 0 || timeChange !== 0) {
             quadrantData.push([accChange, timeChange, item.student_ID, type]);
           }
         });
 
-        resolve({ 
+        resolve({
           pieData: Object.keys(stats).map(k => ({ name: k, value: stats[k] })),
-          quadrantData 
+          quadrantData
         });
       },
       error: (err) => reject(err)
@@ -348,7 +356,7 @@ export const fetchWeeklyProgress = () => {
       skipEmptyLines: true,
       complete: (results) => {
         const rawData = results.data.filter(item => item.week);
-        
+
         // 按周聚合数据
         const weeklyMap = {};
         rawData.forEach(item => {
@@ -384,7 +392,7 @@ export const fetchLearningMethods = () => {
       dynamicTyping: true,
       complete: (results) => {
         const data = results.data.filter(item => item.method);
-        
+
         // 格式化数据
         const processed = data.map(item => ({
           name: item.method.split('_')[1], // 提取简写如 BXr9...
@@ -393,8 +401,39 @@ export const fetchLearningMethods = () => {
           usage: item.使用次数,
           efficiency: item.效率指数
         }));
-        
+
         resolve(processed);
+      },
+      error: (err) => reject(err)
+    });
+  });
+};
+// 知识点旭日图数据
+export const fetchKnowledgeSunburst = () => {
+  return new Promise((resolve, reject) => {
+    Papa.parse('/datav_data/knowledge_sunburst.csv', {
+      download: true,
+      header: true,
+      dynamicTyping: true,
+      complete: (results) => {
+        const data = results.data.filter(item => item.name);
+        resolve(data);
+      },
+      error: (err) => reject(err)
+    });
+  });
+};
+
+// 学习方法雷达图数据
+export const fetchMethodRadar = () => {
+  return new Promise((resolve, reject) => {
+    Papa.parse('/datav_data/method_radar.csv', {
+      download: true,
+      header: true,
+      dynamicTyping: true,
+      complete: (results) => {
+        const data = results.data.filter(item => item.method);
+        resolve(data);
       },
       error: (err) => reject(err)
     });

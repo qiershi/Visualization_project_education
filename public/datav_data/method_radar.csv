@@ -1,0 +1,6 @@
+method,full_name,使用次数,使用学生数,正确率,平均得分,平均用时,效率指数,稳定性,覆盖率,适用广度,value_正确率,value_平均得分,value_效率指数,value_稳定性,value_覆盖率,value_适用广度
+MCj9Ya2R7fZd6xs1q5mNQ,Method_Cj9Ya2R7fZd6xs1q5mNQ,46630,1363,24.8,0.901,9.1,2.5,0.8,99.9,100.0,24.8,90.1,2.5,0.8,99.9,100.0
+Mgj1NLb4Jn7URf9K2kQPd,Method_gj1NLb4Jn7URf9K2kQPd,46560,1363,24.7,0.89,8.7,2.5,0.8,99.9,100.0,24.7,89.0,2.5,0.8,99.9,100.0
+Mm8vwGkEZc3TSW2xqYUoR,Method_m8vwGkEZc3TSW2xqYUoR,46359,1363,25.3,0.899,8.9,2.5,0.8,99.9,100.0,25.3,89.9,2.5,0.8,99.9,100.0
+M5Q4KoXthUuYz3bvrTDFm,Method_5Q4KoXthUuYz3bvrTDFm,46182,1364,25.5,0.91,8.8,2.6,0.8,100.0,100.0,25.5,91.0,2.6,0.8,100.0,100.0
+MBXr9AIsPQhwNvyGdZL57,Method_BXr9AIsPQhwNvyGdZL57,45982,1364,24.7,0.897,9.7,2.3,0.8,100.0,100.0,24.7,89.7,2.3,0.8,100.0,100.0
