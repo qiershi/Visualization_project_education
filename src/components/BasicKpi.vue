@@ -2,7 +2,7 @@
   <div class="kpi-wrapper">
     <div class="kpi-item">
       <dv-decoration-9 style="width:150px;height:150px;" :dur="5">
-        <div class="kpi-content">
+        <div class="kpi-content" @click="showOverview">
           <p>总记录</p>
           <dv-digital-flop :config="flopConfig(stats.totalRecords)" style="width:100px;height:30px;" />
         </div>
@@ -17,6 +17,22 @@
     <div class="kpi-item">
       <div class="chart-title">快速答题(1-9s)占比</div>
       <dv-capsule-chart :config="capsuleConfig" style="width:200px;height:120px;" />
+    </div>
+
+    <!-- 数据概览弹窗 -->
+    <div v-if="showPopup" class="popup-overlay" @click="closePopup">
+      <div class="popup-content" @click.stop>
+        <div class="popup-header">
+          <span>数据概览</span>
+          <button class="close-btn" @click="closePopup">×</button>
+        </div>
+        <div class="popup-body">
+          <p>• 总答题记录: {{ stats.totalRecords }} 条</p>
+          <p>• 参与学生数: {{ stats.totalStudents }} 人</p>
+          <p>• 题目数量: {{ stats.totalQuestions }} 道</p>
+          <p>• 整体正确率: {{ stats.overallAccuracy }}%</p>
+        </div>
+      </div>
     </div>
   </div>
 </template>

@@ -24,7 +24,17 @@ export default {
       const option = {
         tooltip: {
           trigger: 'axis',
-          axisPointer: { type: 'shadow' }
+          axisPointer: { type: 'shadow' },
+          formatter: (params) => {
+            const className = params[0].axisValue;
+            const classData = this.data.find(item => item.class === className);
+            if (classData) {
+              return `${className}<br/>` +
+                     `平均得分: ${classData.平均得分}<br/>` +
+                     `正确率: ${(classData.平均正确率 * 100).toFixed(2)}%`;
+            }
+            return params[0].name;
+          }
         },
         legend: {
           data: ['平均得分', '正确率 (%)'],

@@ -50,10 +50,44 @@ export default {
     }
   },
   methods: {
+    // 根据状态获取颜色
+    getStateColor(state) {
+      const colorMap = {
+        '正确': '#5470c6',
+        '错误': '#ee6666',
+        '部分正确': '#fac858',
+        '未作答': '#91cc75',
+        '超时未答': '#72c1d3',
+        '格式错误': '#f9c440',
+        '计算错误': '#f2838f',
+        '概念错误': '#8378ea',
+        '理解错误': '#a0a7e6',
+        '粗心错误': '#ff9c6e'
+      };
+      
+      // 为未知状态生成一致的颜色
+      if (!colorMap[state]) {
+        let hash = 0;
+        for (let i = 0; i < state.length; i++) {
+          hash = state.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        
+        const colors = [
+          '#73c0de', '#3ba272', '#fc8452', '#9a60b4', '#ea7ccc',
+          '#5470c6', '#fac858', '#ee6666', '#91cc75', '#72c1d3'
+        ];
+        
+        return colors[Math.abs(hash) % colors.length];
+      }
+      
+      return colorMap[state];
+    },
+    
     initPieChart() {
       if (!this.chartInstance) {
         this.chartInstance = echarts.init(this.$refs.pieRef);
       }
+      
       const option = {
         tooltip: { trigger: 'item' },
         series: [{
@@ -64,10 +98,22 @@ export default {
           itemStyle: { borderRadius: 10, borderColor: '#030409', borderWidth: 2 },
           label: { show: false },
           emphasis: { label: { show: true, fontSize: '14', fontWeight: 'bold', color: '#fff' } },
-          data: this.data.map(item => ({ value: item.count, name: item.state }))
+          data: this.data.map(item => ({ 
+            value: item.count, 
+            name: item.state,
+            itemStyle: { color: this.getStateColor(item.state) }
+          }))
         }]
       };
+      
       this.chartInstance.setOption(option);
+      
+      // 添加点击事件监听
+      this.chartInstance.on('click', (params) => {
+        if (params.data) {
+          this.$emit('state-click', params.data);
+        }
+      });
     }
   }
 };

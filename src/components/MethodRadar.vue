@@ -33,79 +33,113 @@ export default {
       const chart = echarts.init(this.$refs.radarRef);
       this.currentMethod = this.data[0]?.full_name || '';
       
-      // 雷达图指标
+      // 极致放大差异方案：不仅设 max，更设 min，将坐标轴聚焦在微小的波动区间内
       const indicators = [
-        { name: '正确率', max: 100 },
-        { name: '效率指数', max: 100 },
-        { name: '稳定性', max: 10 },
-        { name: '覆盖率', max: 100 },
-        { name: '适用广度', max: 100 }
+        { name: '正确率', min: 24, max: 26 },      // 聚焦在 24% - 26% 之间
+        { name: '效率指数', min: 2.2, max: 2.8 },  // 聚焦在 2.2 - 2.8 之间
+        { name: '稳定性', min: 0, max: 1.0 },      // 虽然都是0.8，但保留全局感
+        { name: '覆盖率', min: 99.5, max: 100 },   // 聚焦在 99.5% - 100% 之间
+        { name: '适用广度', min: 0, max: 100 }     // 固定满分
       ];
       
-      const seriesData = this.data.map(item => ({
-        value: [
-          item.value_正确率 || 0,
-          item.value_效率指数 || 0,
-          item.value_稳定性 || 0,
-          item.value_覆盖率 || 0,
-          item.value_适用广度 || 0
-        ],
-        name: item.method
-      }));
+      const seriesData = this.data.map((item, index) => {
+        const colors = ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272'];
+        const color = colors[index % colors.length];
+        return {
+          value: [
+            item.value_正确率 || 0,
+            item.value_效率指数 || 0,
+            item.value_稳定性 || 0,
+            item.value_覆盖率 || 0,
+            item.value_适用广度 || 0
+          ],
+          name: item.method,
+          itemStyle: { color: color },
+          areaStyle: {
+            color: new echarts.graphic.RadialGradient(0.5, 0.5, 1, [
+              { offset: 0, color: 'rgba(0,0,0,0)' },
+              { offset: 1, color: color }
+            ]),
+            opacity: 0.3
+          },
+          lineStyle: {
+            width: 3,
+            opacity: 1,
+            shadowBlur: 10,
+            shadowColor: color
+          },
+          symbol: 'circle',
+          symbolSize: 6
+        };
+      });
       
       const option = {
-        title: {
-          text: '学习方法多维评估',
-          left: 'center',
-          textStyle: { color: '#00eaff', fontSize: 14 }
-        },
         tooltip: {
-          trigger: 'item'
+          trigger: 'item',
+          backgroundColor: 'rgba(10, 20, 40, 0.9)',
+          borderColor: '#00eaff',
+          borderWidth: 1,
+          textStyle: { color: '#fff' },
+          confine: true
         },
         legend: {
-          bottom: 5,
-          textStyle: { color: '#ccc' }
+          bottom: -5,
+          type: 'scroll',
+          textStyle: { color: '#83bff6', fontSize: 10 },
+          pageTextStyle: { color: '#fff' },
+          // 默认只选中第一个，避免面积重叠导致看不清
+          selected: this.data.reduce((acc, item, idx) => {
+            acc[item.method] = idx === 0;
+            return acc;
+          }, {})
         },
         radar: {
           indicator: indicators,
           shape: 'circle',
-          splitNumber: 4,
+          splitNumber: 5,
+          radius: '65%',
+          center: ['50%', '42%'],
           axisName: {
             color: '#83bff6',
-            fontSize: 12
+            fontSize: 10,
+            fontWeight: 'bold'
           },
           splitLine: {
             lineStyle: {
-              color: 'rgba(0, 234, 255, 0.2)'
+              color: [
+                'rgba(0, 234, 255, 0.05)',
+                'rgba(0, 234, 255, 0.1)',
+                'rgba(0, 234, 255, 0.2)',
+                'rgba(0, 234, 255, 0.4)',
+                'rgba(0, 234, 255, 0.6)'
+              ].reverse()
             }
+          },
+          splitArea: { show: false },
+          axisLine: {
+            lineStyle: { color: 'rgba(0, 234, 255, 0.3)' }
           }
         },
         series: [{
           type: 'radar',
           data: seriesData,
-          itemStyle: {
-            opacity: 0.7
-          },
-          lineStyle: {
-            width: 2
-          },
-          areaStyle: {
-            opacity: 0.1
+          emphasis: {
+            lineStyle: { width: 5 },
+            areaStyle: { opacity: 0.6 }
           }
         }]
       };
       
-      chart.setOption(option);
+      chart.setOption(option, true); // 使用 true 强制清理旧配置
       
-      // 点击图例切换显示的方法
       chart.on('legendselectchanged', (params) => {
         const selected = params.selected;
-        for (const key in selected) {
-          if (selected[key]) {
-            const method = this.data.find(d => d.method === key);
-            this.currentMethod = method?.full_name || key;
-            break;
-          }
+        const firstSelected = Object.keys(selected).find(key => selected[key]);
+        if (firstSelected) {
+          const method = this.data.find(d => d.method === firstSelected);
+          this.currentMethod = method?.full_name || firstSelected;
+        } else {
+          this.currentMethod = '未选中任何方法';
         }
       });
       
